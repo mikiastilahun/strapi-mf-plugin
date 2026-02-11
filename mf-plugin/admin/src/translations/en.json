@@ -1,0 +1,21 @@
+{
+  "plugin.name": "Visual Builder",
+  "plugin.description": "Build pages using Module Federation components",
+  "home.title": "Visual Page Builder",
+  "home.description": "Build pages using Module Federation components",
+  "layouts.title": "Page Layouts",
+  "layouts.description": "Create and manage your page layouts",
+  "sources.title": "MF Sources",
+  "sources.description": "Manage your Module Federation remote sources",
+  "builder.title": "Page Builder",
+  "builder.dragHint": "Drag components here to build your layout",
+  "builder.save": "Save",
+  "builder.preview": "Preview",
+  "builder.export": "Export",
+  "common.create": "Create",
+  "common.edit": "Edit",
+  "common.delete": "Delete",
+  "common.cancel": "Cancel",
+  "common.save": "Save",
+  "common.loading": "Loading..."
+}

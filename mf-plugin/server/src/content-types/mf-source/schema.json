@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "mf_sources",
+  "info": {
+    "singularName": "mf-source",
+    "pluralName": "mf-sources",
+    "displayName": "MF Source",
+    "description": "Module Federation remote source configuration"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "manifestUrl": {
+      "type": "string",
+      "required": true
+    },
+    "remoteEntry": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "components": {
+      "type": "json"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "lastFetched": {
+      "type": "datetime"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

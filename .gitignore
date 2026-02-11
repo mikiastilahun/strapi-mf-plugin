@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+
+# Environment files (keep examples)
+.env
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Strapi
+.strapi/
+.strapi-updater.json
+.tmp/
+
+# Yalc (local package linking)
+.yalc/
+yalc.lock
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.sqlite
+*.db
+database/data.db
+
+# Lock files (keep one per project)
+# package-lock.json
+# pnpm-lock.yaml

@@ -1,0 +1,42 @@
+{
+  "kind": "collectionType",
+  "collectionName": "page_layouts",
+  "info": {
+    "singularName": "page-layout",
+    "pluralName": "page-layouts",
+    "displayName": "Page Layout",
+    "description": "Visual page layout configuration"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "layout": {
+      "type": "json",
+      "required": true
+    },
+    "gridConfig": {
+      "type": "json"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "isPublished": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
