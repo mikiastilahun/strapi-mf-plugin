@@ -32,6 +32,7 @@ export default {
     port: 3001,
     hot: true,
     historyApiFallback: true,
+    allowedHosts: "all",
     headers: {
       "Access-Control-Allow-Origin": "*",
     },
