@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, Button, TextInput, Field, Modal, Flex, Typography } from '@strapi/design-system';
 
 interface SourceFormProps {
@@ -20,6 +20,15 @@ export function SourceForm({
   const [manifestUrl, setManifestUrl] = useState(initialData?.manifestUrl || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync form state when initialData changes (fixes edit not prepopulating on first click)
+  useEffect(() => {
+    if (isOpen) {
+      setName(initialData?.name || '');
+      setManifestUrl(initialData?.manifestUrl || '');
+      setError(null);
+    }
+  }, [isOpen, initialData?.name, initialData?.manifestUrl]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -54,40 +63,44 @@ export function SourceForm({
 
   return (
     <Modal.Root open={isOpen} onOpenChange={(open: boolean) => !open && handleClose()}>
-      <Modal.Content>
+      <Modal.Content style={{ maxWidth: '680px', width: '100%' }}>
         <Modal.Header>
           <Typography variant="beta">{isEditing ? 'Edit MF Source' : 'Add MF Source'}</Typography>
         </Modal.Header>
         <Modal.Body>
-          <Flex direction="column" gap={4}>
-            {error && (
-              <Box background="danger100" padding={3} hasRadius>
-                <Typography textColor="danger600">{error}</Typography>
-              </Box>
-            )}
+          <Box style={{ width: '100%' }}>
+            <Flex direction="column" gap={4} style={{ width: '100%' }}>
+              {error && (
+                <Box background="danger100" padding={3} hasRadius>
+                  <Typography textColor="danger600">{error}</Typography>
+                </Box>
+              )}
 
-            <Field.Root>
-              <Field.Label>Name</Field.Label>
-              <TextInput
-                placeholder="My Remote App"
-                value={name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-              />
-              <Field.Hint>A friendly name for this Module Federation source</Field.Hint>
-            </Field.Root>
+              <Field.Root style={{ width: '100%' }}>
+                <Field.Label>Name</Field.Label>
+                <TextInput
+                  placeholder="My Remote App"
+                  value={name}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+                <Field.Hint>A friendly name for this Module Federation source</Field.Hint>
+              </Field.Root>
 
-            <Field.Root>
-              <Field.Label>Manifest URL</Field.Label>
-              <TextInput
-                placeholder="https://example.com/mf-manifest.json"
-                value={manifestUrl}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setManifestUrl(e.target.value)
-                }
-              />
-              <Field.Hint>URL to the module-federation.json or mf-manifest.json file</Field.Hint>
-            </Field.Root>
-          </Flex>
+              <Field.Root style={{ width: '100%' }}>
+                <Field.Label>Manifest URL</Field.Label>
+                <TextInput
+                  placeholder="https://example.com/mf-manifest.json"
+                  value={manifestUrl}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setManifestUrl(e.target.value)
+                  }
+                  style={{ width: '100%' }}
+                />
+                <Field.Hint>URL to the module-federation.json or mf-manifest.json file</Field.Hint>
+              </Field.Root>
+            </Flex>
+          </Box>
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={handleClose} variant="tertiary">

@@ -29,11 +29,15 @@ export default {
   },
 
   devServer: {
+    host: "0.0.0.0",
     port: 3001,
     hot: true,
     historyApiFallback: true,
+    allowedHosts: "all",
     headers: {
       "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+      "Access-Control-Allow-Headers": "*",
     },
   },
 

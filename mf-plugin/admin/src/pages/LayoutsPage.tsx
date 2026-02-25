@@ -25,6 +25,7 @@ import { Trash, Plus, Pencil, Download } from '@strapi/icons';
 import { useNavigate } from 'react-router-dom';
 import { useLayouts } from '../hooks/useLayouts';
 import { PLUGIN_ID } from '../pluginId';
+import { SubNav } from '../components/SubNav';
 import type { PageLayoutRecord } from '../types';
 
 export function LayoutsPage() {
@@ -99,7 +100,9 @@ export function LayoutsPage() {
   }
 
   return (
-    <Box padding={8} background="neutral100">
+    <Box background="neutral100">
+      <SubNav />
+      <Box padding={8}>
       <Flex justifyContent="space-between" alignItems="flex-start" marginBottom={6}>
         <Box>
           <Typography variant="alpha" tag="h1">
@@ -125,21 +128,19 @@ export function LayoutsPage() {
       {layouts.length === 0 ? (
         <Card>
           <CardBody>
-            <Box padding={8} style={{ textAlign: 'center' }}>
+            <Flex direction="column" alignItems="center" justifyContent="center" padding={8} gap={2} style={{ width: '100%' }}>
               <Typography variant="delta" textColor="neutral600">
                 No layouts created yet
               </Typography>
+              <Typography variant="epsilon" textColor="neutral500">
+                Create your first layout to start building pages
+              </Typography>
               <Box marginTop={2}>
-                <Typography variant="epsilon" textColor="neutral500">
-                  Create your first layout to start building pages
-                </Typography>
-              </Box>
-              <Box marginTop={4}>
                 <Button startIcon={<Plus />} onClick={() => setIsCreateOpen(true)}>
                   Create Your First Layout
                 </Button>
               </Box>
-            </Box>
+            </Flex>
           </CardBody>
         </Card>
       ) : (
@@ -236,40 +237,44 @@ export function LayoutsPage() {
         open={isCreateOpen}
         onOpenChange={(open: boolean) => !open && setIsCreateOpen(false)}
       >
-        <Modal.Content>
+        <Modal.Content style={{ maxWidth: '680px', width: '100%' }}>
           <Modal.Header>
             <Typography variant="beta">Create New Layout</Typography>
           </Modal.Header>
           <Modal.Body>
-            <Flex direction="column" gap={4}>
-              {createError && (
-                <Box background="danger100" padding={3} hasRadius>
-                  <Typography textColor="danger600">{createError}</Typography>
-                </Box>
-              )}
+            <Box style={{ width: '100%' }}>
+              <Flex direction="column" gap={4} style={{ width: '100%' }}>
+                {createError && (
+                  <Box background="danger100" padding={3} hasRadius>
+                    <Typography textColor="danger600">{createError}</Typography>
+                  </Box>
+                )}
 
-              <Field.Root>
-                <Field.Label>Name</Field.Label>
-                <TextInput
-                  placeholder="My Page Layout"
-                  value={newLayoutName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setNewLayoutName(e.target.value)
-                  }
-                />
-              </Field.Root>
+                <Field.Root style={{ width: '100%' }}>
+                  <Field.Label>Name</Field.Label>
+                  <TextInput
+                    placeholder="My Page Layout"
+                    value={newLayoutName}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setNewLayoutName(e.target.value)
+                    }
+                    style={{ width: '100%' }}
+                  />
+                </Field.Root>
 
-              <Field.Root>
-                <Field.Label>Description (optional)</Field.Label>
-                <Textarea
-                  placeholder="A brief description of this layout..."
-                  value={newLayoutDesc}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                    setNewLayoutDesc(e.target.value)
-                  }
-                />
-              </Field.Root>
-            </Flex>
+                <Field.Root style={{ width: '100%' }}>
+                  <Field.Label>Description (optional)</Field.Label>
+                  <Textarea
+                    placeholder="A brief description of this layout..."
+                    value={newLayoutDesc}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      setNewLayoutDesc(e.target.value)
+                    }
+                    style={{ width: '100%' }}
+                  />
+                </Field.Root>
+              </Flex>
+            </Box>
           </Modal.Body>
           <Modal.Footer>
             <Button
@@ -313,6 +318,7 @@ export function LayoutsPage() {
           </Dialog.Footer>
         </Dialog.Content>
       </Dialog.Root>
+      </Box>
     </Box>
   );
 }
