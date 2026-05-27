@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Box, Flex, Typography, IconButton } from '@strapi/design-system';
 import { Trash, Drag } from '@strapi/icons';
 import type { LayoutItem, ComponentWithSource } from '../../types';
+import { parseGridValue } from '../../utils/grid';
 
 interface GridItemProps {
   item: LayoutItem;
@@ -12,22 +13,6 @@ interface GridItemProps {
   onSelect: (addToSelection?: boolean) => void;
   onRemove: () => void;
   onResize: (id: string, updates: Partial<LayoutItem>) => void;
-}
-
-// Parse grid column/row value like "1 / span 6" or "1 / 7"
-function parseGridValue(value: string): { start: number; span: number } {
-  const parts = value.split('/').map((p) => p.trim());
-  const start = parseInt(parts[0]) || 1;
-
-  if (parts[1]?.startsWith('span')) {
-    const span = parseInt(parts[1].replace('span', '').trim()) || 1;
-    return { start, span };
-  } else if (parts[1]) {
-    const end = parseInt(parts[1]) || start + 1;
-    return { start, span: end - start };
-  }
-
-  return { start, span: 1 };
 }
 
 export function GridItem({
@@ -40,9 +25,7 @@ export function GridItem({
   onResize,
 }: GridItemProps) {
   const [isResizing, setIsResizing] = useState(false);
-  const [resizeStart, setResizeStart] = useState<{ x: number; y: number; span: number } | null>(
-    null
-  );
+  const elementRef = useRef<HTMLDivElement | null>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `canvas-${item.id}`,
@@ -52,8 +35,38 @@ export function GridItem({
     },
   });
 
+  const setRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      elementRef.current = node;
+      setNodeRef(node);
+    },
+    [setNodeRef]
+  );
+
   const currentColumn = parseGridValue(item.gridColumn);
   const currentRow = parseGridValue(item.gridRow);
+
+  // Measure the actual cell dimensions from the parent grid container.
+  const measureCellSize = useCallback(() => {
+    const grid = elementRef.current?.parentElement;
+    if (!grid) return { cellWidth: 80, cellHeight: 100, gap: 16 };
+    const gridStyle = window.getComputedStyle(grid);
+    const gap = parseFloat(gridStyle.columnGap || gridStyle.gap || '0') || 0;
+    const rowGap = parseFloat(gridStyle.rowGap || gridStyle.gap || '0') || 0;
+    const paddingX =
+      parseFloat(gridStyle.paddingLeft || '0') + parseFloat(gridStyle.paddingRight || '0');
+    const gridWidth = grid.clientWidth - paddingX;
+    const cellWidth = (gridWidth - gap * (gridColumns - 1)) / gridColumns;
+    // Use the element's own height divided by its span for a stable row height,
+    // falling back to gridAutoRows on the parent.
+    const itemRect = elementRef.current!.getBoundingClientRect();
+    const measuredRow =
+      currentRow.span > 0
+        ? (itemRect.height - rowGap * (currentRow.span - 1)) / currentRow.span
+        : 100;
+    const cellHeight = measuredRow > 0 ? measuredRow : 100;
+    return { cellWidth, cellHeight, gap, rowGap };
+  }, [gridColumns, currentRow.span]);
 
   // Handle resize drag
   const handleResizeMouseDown = useCallback(
@@ -61,37 +74,41 @@ export function GridItem({
       e.stopPropagation();
       e.preventDefault();
       setIsResizing(true);
-      setResizeStart({
-        x: e.clientX,
-        y: e.clientY,
-        span: direction === 'vertical' ? currentRow.span : currentColumn.span,
-      });
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startColSpan = currentColumn.span;
+      const startRowSpan = currentRow.span;
+      const { cellWidth, cellHeight, gap = 0, rowGap = 0 } = measureCellSize();
+      const colStep = cellWidth + gap;
+      const rowStep = cellHeight + rowGap;
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
-        const deltaX = moveEvent.clientX - e.clientX;
-        const deltaY = moveEvent.clientY - e.clientY;
-        const cellWidth = 80; // Approximate cell width in pixels
-        const cellHeight = 100; // Approximate cell height in pixels
+        const deltaX = moveEvent.clientX - startX;
+        const deltaY = moveEvent.clientY - startY;
 
         if (direction === 'horizontal' || direction === 'both') {
-          const spanDelta = Math.round(deltaX / cellWidth);
+          const spanDelta = Math.round(deltaX / colStep);
           const newSpan = Math.max(
             1,
-            Math.min(gridColumns - currentColumn.start + 1, currentColumn.span + spanDelta)
+            Math.min(gridColumns - currentColumn.start + 1, startColSpan + spanDelta)
           );
-          onResize(item.id, { gridColumn: `${currentColumn.start} / span ${newSpan}` });
+          if (newSpan !== currentColumn.span) {
+            onResize(item.id, { gridColumn: `${currentColumn.start} / span ${newSpan}` });
+          }
         }
 
         if (direction === 'vertical' || direction === 'both') {
-          const spanDelta = Math.round(deltaY / cellHeight);
-          const newSpan = Math.max(1, currentRow.span + spanDelta);
-          onResize(item.id, { gridRow: `${currentRow.start} / span ${newSpan}` });
+          const spanDelta = Math.round(deltaY / rowStep);
+          const newSpan = Math.max(1, startRowSpan + spanDelta);
+          if (newSpan !== currentRow.span) {
+            onResize(item.id, { gridRow: `${currentRow.start} / span ${newSpan}` });
+          }
         }
       };
 
       const handleMouseUp = () => {
         setIsResizing(false);
-        setResizeStart(null);
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
@@ -99,7 +116,7 @@ export function GridItem({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     },
-    [item.id, currentColumn, currentRow, gridColumns, onResize]
+    [item.id, currentColumn, currentRow, gridColumns, onResize, measureCellSize]
   );
 
   const style: React.CSSProperties = {
@@ -130,7 +147,7 @@ export function GridItem({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setRefs}
       style={style}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();

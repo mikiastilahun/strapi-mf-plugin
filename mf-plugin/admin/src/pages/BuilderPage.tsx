@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   DndContext,
@@ -18,6 +18,10 @@ import { PropertiesPanel } from '../components/builder/PropertiesPanel';
 import { PreviewFrame } from '../components/builder/PreviewFrame';
 import { Toolbar } from '../components/builder/Toolbar';
 import type { ComponentWithSource, DragData } from '../types';
+import { findNextSlot, parseGridValue, formatGridValue } from '../utils/grid';
+
+const DEFAULT_NEW_ITEM_SPAN = 4;
+const CANVAS_PADDING = 20;
 
 const TOOLBAR_HEIGHT = 56;
 const SIDEBAR_HEADER_HEIGHT = 40;
@@ -61,6 +65,7 @@ export function BuilderPage() {
 
   const [activeDragItem, setActiveDragItem] = useState<ComponentWithSource | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -176,26 +181,79 @@ export function BuilderPage() {
     }
   };
 
+  const getCellDimensions = useCallback(() => {
+    const grid = canvasRef.current?.querySelector<HTMLElement>('[data-canvas-grid]');
+    if (!grid) return null;
+    const rect = grid.getBoundingClientRect();
+    const gapPx = parseInt(gridConfig.gap) || 0;
+    const innerWidth = rect.width - CANVAS_PADDING * 2;
+    const cellWidth = (innerWidth - gapPx * (gridConfig.columns - 1)) / gridConfig.columns;
+    const rowHeightPx = parseInt(gridConfig.rowHeight) || 100;
+    return {
+      cellWidth,
+      cellHeight: rowHeightPx,
+      gap: gapPx,
+      colStep: cellWidth + gapPx,
+      rowStep: rowHeightPx + gapPx,
+    };
+  }, [gridConfig]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveDragItem(null);
-    const { active, over } = event;
-    if (!over) return;
+    const { active, over, delta } = event;
 
     const dragData = active.data.current as DragData;
 
-    if (dragData?.type === 'palette' && dragData.component && over.id === 'canvas') {
+    if (dragData?.type === 'palette' && dragData.component && over?.id === 'canvas') {
       const component = dragData.component;
+      const span = Math.min(DEFAULT_NEW_ITEM_SPAN, gridConfig.columns);
+      const slot = findNextSlot(items, gridConfig.columns, span, 1);
       addItem({
         componentId: component.id,
         mfSourceId: component.sourceId,
-        gridColumn: `1 / span ${gridConfig.columns}`,
-        gridRow: 'auto / span 1',
+        gridColumn: formatGridValue({ start: slot.col, span }),
+        gridRow: formatGridValue({ start: slot.row, span: 1 }),
         props: {},
       });
+      return;
     }
 
     if (dragData?.type === 'canvas' && dragData.itemId) {
-      selectItem(dragData.itemId);
+      const item = items.find((i) => i.id === dragData.itemId);
+      if (!item) return;
+
+      const dims = getCellDimensions();
+      const movedFar =
+        Math.abs(delta.x) > 4 || Math.abs(delta.y) > 4;
+
+      if (!dims || !movedFar) {
+        selectItem(dragData.itemId);
+        return;
+      }
+
+      const col = parseGridValue(item.gridColumn);
+      const row = parseGridValue(item.gridRow);
+      const colDelta = Math.round(delta.x / dims.colStep);
+      const rowDelta = Math.round(delta.y / dims.rowStep);
+
+      if (colDelta === 0 && rowDelta === 0) {
+        selectItem(dragData.itemId);
+        return;
+      }
+
+      const newColStart = Math.max(
+        1,
+        Math.min(gridConfig.columns - col.span + 1, col.start + colDelta)
+      );
+      const rowStartNum = parseInt(item.gridRow.split('/')[0].trim());
+      const baseRow = Number.isNaN(rowStartNum) ? 1 : rowStartNum;
+      const newRowStart = Math.max(1, baseRow + rowDelta);
+
+      updateItem(item.id, {
+        gridColumn: formatGridValue({ start: newColStart, span: col.span }),
+        gridRow: formatGridValue({ start: newRowStart, span: row.span }),
+      });
+      selectItem(item.id);
     }
   };
 
@@ -338,6 +396,7 @@ export function BuilderPage() {
 
           {/* Canvas */}
           <div
+            ref={canvasRef}
             style={{
               flex: 1,
               padding: '20px',

@@ -34,27 +34,28 @@
     background: #f6f6f9;
   `;
 
-  // Scale a grid column value for responsive layout
+  // Scale a grid column value for responsive layout.
+  // We work in 0-indexed offsets (start - 1, end - 1) so adjacent items at
+  // 1/span 4 and 5/span 4 stay non-overlapping after scaling.
   function scaleGridColumn(gridColumn: string): string {
     if (columnScale === 1) return gridColumn;
-    
-    // Parse "start / span X" or "start / end" format
+
     const parts = gridColumn.split('/').map(p => p.trim());
     if (parts.length !== 2) return gridColumn;
 
     const start = parseInt(parts[0]) || 1;
-    
-    if (parts[1].startsWith('span')) {
-      const span = parseInt(parts[1].replace('span', '').trim()) || 1;
-      const scaledSpan = Math.max(1, Math.round(span * columnScale));
-      const scaledStart = Math.max(1, Math.min(Math.round(start * columnScale), responsiveColumns - scaledSpan + 1));
-      return `${scaledStart} / span ${scaledSpan}`;
-    } else {
-      const end = parseInt(parts[1]) || start + 1;
-      const scaledStart = Math.max(1, Math.round(start * columnScale));
-      const scaledEnd = Math.max(scaledStart + 1, Math.round(end * columnScale));
-      return `${scaledStart} / ${Math.min(scaledEnd, responsiveColumns + 1)}`;
-    }
+    const isSpan = parts[1].startsWith('span');
+    const rawEnd = isSpan
+      ? start + (parseInt(parts[1].replace('span', '').trim()) || 1)
+      : (parseInt(parts[1]) || start + 1);
+
+    // Scale offsets from origin, then convert back to 1-indexed grid lines.
+    const scaledStart = Math.max(1, Math.round((start - 1) * columnScale) + 1);
+    let scaledEnd = Math.max(scaledStart + 1, Math.round((rawEnd - 1) * columnScale) + 1);
+    scaledEnd = Math.min(scaledEnd, responsiveColumns + 1);
+    const scaledSpan = Math.max(1, scaledEnd - scaledStart);
+
+    return isSpan ? `${scaledStart} / span ${scaledSpan}` : `${scaledStart} / ${scaledEnd}`;
   }
 
   function handleResize() {

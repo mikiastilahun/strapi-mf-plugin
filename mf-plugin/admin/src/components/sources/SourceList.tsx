@@ -98,21 +98,19 @@ export function SourceList() {
       {sources.length === 0 ? (
         <Card>
           <CardBody>
-            <Box padding={8} style={{ textAlign: 'center' }}>
+            <Flex direction="column" alignItems="center" justifyContent="center" padding={8} gap={2} style={{ width: '100%' }}>
               <Typography variant="delta" textColor="neutral600">
                 No MF sources configured
               </Typography>
+              <Typography variant="epsilon" textColor="neutral500">
+                Add a Module Federation source to start building layouts
+              </Typography>
               <Box marginTop={2}>
-                <Typography variant="epsilon" textColor="neutral500">
-                  Add a Module Federation source to start building layouts
-                </Typography>
-              </Box>
-              <Box marginTop={4}>
                 <Button startIcon={<Plus />} onClick={() => setIsFormOpen(true)}>
                   Add Your First Source
                 </Button>
               </Box>
-            </Box>
+            </Flex>
           </CardBody>
         </Card>
       ) : (

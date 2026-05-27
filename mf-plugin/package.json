@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-mf-builder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A visual page builder plugin for Strapi that enables composing pages from Module Federation remote components",
   "keywords": [
     "strapi",

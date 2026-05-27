@@ -35,6 +35,7 @@ export function Canvas({
     gap: gridConfig.gap,
     minHeight: '500px',
     gridAutoRows: gridConfig.rowHeight,
+    gridAutoFlow: 'dense',
     background: isOver ? 'rgba(73, 69, 255, 0.03)' : '#ffffff',
     padding: '20px',
     borderRadius: '8px',
@@ -45,7 +46,12 @@ export function Canvas({
   };
 
   return (
-    <div ref={setNodeRef} style={gridStyle} onClick={() => onSelectItem(null)}>
+    <div
+      ref={setNodeRef}
+      data-canvas-grid
+      style={gridStyle}
+      onClick={() => onSelectItem(null)}
+    >
       {items.length === 0 && (
         <Box
           style={{

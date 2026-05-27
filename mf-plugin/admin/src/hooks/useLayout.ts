@@ -2,6 +2,18 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useFetchClient } from '@strapi/strapi/admin';
 import { PLUGIN_ID } from '../pluginId';
 import type { PageLayoutRecord, PageLayout, GridConfig, LayoutItem } from '../types';
+import { findNextSlot, parseGridValue, formatGridValue } from '../utils/grid';
+
+function normalizeRow(item: LayoutItem, items: LayoutItem[], columns: number): LayoutItem {
+  const rowStart = parseInt(item.gridRow.split('/')[0].trim());
+  if (!Number.isNaN(rowStart)) return item;
+  const col = parseGridValue(item.gridColumn);
+  const slot = findNextSlot(items, columns, col.span, 1);
+  return {
+    ...item,
+    gridRow: formatGridValue({ start: slot.row, span: 1 }),
+  };
+}
 
 const API_BASE = `/${PLUGIN_ID}`;
 
@@ -130,8 +142,14 @@ export function useLayout(): UseLayoutReturn {
         const { data } = await get(`${API_BASE}/layouts/${id}`);
         const layoutData = (data as ApiResponse<PageLayoutRecord>).data;
         setLayout(layoutData);
-        const loadedItems = layoutData.layout?.items || [];
+        const rawItems = layoutData.layout?.items || [];
         const loadedGridConfig = layoutData.gridConfig || DEFAULT_GRID_CONFIG;
+        // Normalize 'auto' rows from older saved layouts into explicit row numbers
+        // so positions stay stable across the canvas and the preview.
+        const loadedItems: LayoutItem[] = [];
+        for (const item of rawItems) {
+          loadedItems.push(normalizeRow(item, loadedItems, loadedGridConfig.columns));
+        }
         setItems(loadedItems);
         setGridConfig(loadedGridConfig);
         setIsDirty(false);
@@ -272,40 +290,56 @@ export function useLayout(): UseLayoutReturn {
   const pasteItems = useCallback(() => {
     if (clipboardItems.length === 0) return;
 
-    const newItems = clipboardItems.map((item) => ({
-      ...item,
-      id: generateId(),
-      // Offset pasted items slightly
-      gridColumn: item.gridColumn,
-      gridRow: 'auto / span 1',
-    }));
-
     setItems((prev) => {
-      const updated = [...prev, ...newItems];
+      const placed: LayoutItem[] = [];
+      const working = [...prev];
+      for (const item of clipboardItems) {
+        const col = parseGridValue(item.gridColumn);
+        const row = parseGridValue(item.gridRow);
+        const slot = findNextSlot(working, gridConfig.columns, col.span, row.span);
+        const newItem: LayoutItem = {
+          ...item,
+          id: generateId(),
+          gridColumn: formatGridValue({ start: slot.col, span: col.span }),
+          gridRow: formatGridValue({ start: slot.row, span: row.span }),
+        };
+        placed.push(newItem);
+        working.push(newItem);
+      }
+      const updated = [...prev, ...placed];
       pushToHistory(updated, gridConfig);
+      setSelectedItemIds(placed.map((item) => item.id));
       return updated;
     });
     setIsDirty(true);
-    setSelectedItemIds(newItems.map((item) => item.id));
   }, [clipboardItems, gridConfig, pushToHistory]);
 
   const duplicateSelectedItems = useCallback(() => {
     const selectedItems = items.filter((item) => selectedItemIds.includes(item.id));
     if (selectedItems.length === 0) return;
 
-    const newItems = selectedItems.map((item) => ({
-      ...item,
-      id: generateId(),
-      gridRow: 'auto / span 1',
-    }));
-
     setItems((prev) => {
-      const updated = [...prev, ...newItems];
+      const placed: LayoutItem[] = [];
+      const working = [...prev];
+      for (const item of selectedItems) {
+        const col = parseGridValue(item.gridColumn);
+        const row = parseGridValue(item.gridRow);
+        const slot = findNextSlot(working, gridConfig.columns, col.span, row.span);
+        const newItem: LayoutItem = {
+          ...item,
+          id: generateId(),
+          gridColumn: formatGridValue({ start: slot.col, span: col.span }),
+          gridRow: formatGridValue({ start: slot.row, span: row.span }),
+        };
+        placed.push(newItem);
+        working.push(newItem);
+      }
+      const updated = [...prev, ...placed];
       pushToHistory(updated, gridConfig);
+      setSelectedItemIds(placed.map((item) => item.id));
       return updated;
     });
     setIsDirty(true);
-    setSelectedItemIds(newItems.map((item) => item.id));
   }, [items, selectedItemIds, gridConfig, pushToHistory]);
 
   // History operations
