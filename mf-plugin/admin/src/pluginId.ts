@@ -1,1 +1,1 @@
-export const PLUGIN_ID = 'mf-builder';
+export const PLUGIN_ID = 'mf-plugin';

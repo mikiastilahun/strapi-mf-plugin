@@ -185,12 +185,21 @@ export function BuilderPage() {
 
     if (dragData?.type === 'palette' && dragData.component && over.id === 'canvas') {
       const component = dragData.component;
+      // Seed props from the component's schema defaults so dropped components
+      // start with sensible values instead of an empty object.
+      const defaultProps: Record<string, unknown> = {};
+      const propDefs = component.props || {};
+      for (const [propName, propDef] of Object.entries(propDefs)) {
+        if (propDef && typeof propDef === 'object' && 'default' in propDef) {
+          defaultProps[propName] = (propDef as { default?: unknown }).default;
+        }
+      }
       addItem({
         componentId: component.id,
         mfSourceId: component.sourceId,
         gridColumn: `1 / span ${gridConfig.columns}`,
         gridRow: 'auto / span 1',
-        props: {},
+        props: defaultProps,
       });
     }
 

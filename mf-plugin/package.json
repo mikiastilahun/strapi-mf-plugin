@@ -77,7 +77,7 @@
   },
   "strapi": {
     "kind": "plugin",
-    "name": "mf-builder",
+    "name": "mf-plugin",
     "displayName": "Module Federation Page Builder",
     "description": "Visual page builder using Module Federation remote components"
   },
