@@ -91,6 +91,10 @@ function PropEditor({ name, value, propDef, onChange }: PropEditorProps) {
     );
   }
 
+  if (type === 'json') {
+    return <JsonPropEditor name={name} value={value} propDef={propDef} onChange={onChange} />;
+  }
+
   // Default: string input
   return (
     <Field.Root>
@@ -100,6 +104,52 @@ function PropEditor({ name, value, propDef, onChange }: PropEditorProps) {
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(name, e.target.value)}
         size="S"
       />
+      {propDef?.description && <Field.Hint>{propDef.description}</Field.Hint>}
+    </Field.Root>
+  );
+}
+
+/** Per-prop JSON editor for object/array props. Parses on blur; leaves the
+ *  last valid value untouched while the text is invalid. */
+function JsonPropEditor({ name, value, propDef, onChange }: PropEditorProps) {
+  const [jsonString, setJsonString] = useState(
+    value === undefined ? '' : JSON.stringify(value, null, 2)
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setJsonString(value === undefined ? '' : JSON.stringify(value, null, 2));
+    setError(null);
+  }, [value]);
+
+  const handleBlur = () => {
+    if (jsonString.trim() === '') {
+      setError(null);
+      onChange(name, undefined);
+      return;
+    }
+    try {
+      onChange(name, JSON.parse(jsonString));
+      setError(null);
+    } catch (e) {
+      setError('Invalid JSON');
+    }
+  };
+
+  return (
+    <Field.Root>
+      <Field.Label>{name}</Field.Label>
+      <Textarea
+        value={jsonString}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setJsonString(e.target.value)}
+        onBlur={handleBlur}
+        style={{
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, monospace',
+          fontSize: '12px',
+          minHeight: '96px',
+        }}
+      />
+      {error && <Field.Error>{error}</Field.Error>}
       {propDef?.description && <Field.Hint>{propDef.description}</Field.Hint>}
     </Field.Root>
   );

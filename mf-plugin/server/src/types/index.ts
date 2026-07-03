@@ -46,6 +46,41 @@ export interface MFManifest {
   >;
 }
 
+/**
+ * A single prop as emitted by a remote's `module-props.json` sidecar
+ * (produced by gruim's generateModuleTypes.js).
+ */
+export interface ModulePropDescriptor {
+  name: string;
+  tsType: string;
+  jsonType: 'object' | 'array' | 'boolean' | 'string' | 'number' | 'function';
+  default?: unknown;
+  required?: boolean;
+  bindable?: boolean;
+  options?: unknown[];
+  description: string;
+}
+
+/** One entry in `module-props.json`, keyed by the raw expose key (e.g. "./Customer/find"). */
+export interface ModulePropsEntry {
+  resource?: string;
+  view?: string;
+  operationId?: string;
+  props: ModulePropDescriptor[];
+}
+
+/** Full `module-props.json` file: a flat map of expose-key -> entry. */
+export type ModulePropsFile = Record<string, ModulePropsEntry>;
+
+/** A prop definition in the shape the builder's PropertiesPanel consumes. */
+export interface ComponentPropDef {
+  type: string;
+  required?: boolean;
+  default?: unknown;
+  options?: unknown[];
+  description?: string;
+}
+
 export interface ParsedComponent {
   id: string;
   name: string;
@@ -54,7 +89,7 @@ export interface ParsedComponent {
   description: string;
   category: string;
   icon: string | null;
-  props: Record<string, unknown> | null;
+  props: Record<string, ComponentPropDef> | null;
 }
 
 export interface ComponentWithSource extends ParsedComponent {
